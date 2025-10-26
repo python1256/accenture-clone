@@ -4,6 +4,7 @@ import Hero from "@/components/Hero";
 import AnimatedCardGrid from "@/components/AnimatedCardGrid";
 import QuoteSplit from "@/components/QuoteSplit";
 import ValueBanner from "@/components/ValueBanner";
+import ShowcaseCarousel from "@/components/ShowcaseCarousel";
 import React from "react";
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
       {/* two static sections */}
       <QuoteSplit />
       <ValueBanner />
+      <ShowcaseCarousel />
     </main>
   );
 }

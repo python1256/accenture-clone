@@ -109,7 +109,7 @@ export default function Navbar() {
               <ChevronDown active={localeOpen} />
             </button>
 
-            {localeOpen && (
+             {localeOpen && (
               <>
                 <button
                   aria-label="Close country list"
@@ -217,21 +217,13 @@ function MegaPanel({
 
 /* ========= Panel Sections ========= */
 
-function SectionShell({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function SectionShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-12 gap-10">
-      <div className="col-span-12">
-        <h3 className="text-[32px] font-semibold leading-tight flex items-center gap-3">
-          {title}{" "}
-          <span className="inline-block w-6 h-[12px] bg-accent-purple rounded-sm" />
-        </h3>
-      </div>
+    <div>
+      <h3 className="mega-title">
+        {title}
+        <span className="inline-block w-6 h-[12px] bg-accent-purple rounded-sm" />
+      </h3>
       {children}
     </div>
   );
@@ -240,7 +232,8 @@ function SectionShell({
 function WhatWeDoSection() {
   return (
     <SectionShell title="What we do">
-      <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-14">
+      <div className="mega-grid-4">
+        {/* Capabilities (left 2 columns, split list) */}
         <MenuColumn
           heading="Capabilities"
           items={[
@@ -250,15 +243,15 @@ function WhatWeDoSection() {
             "Data and Artificial Intelligence",
             "Digital Engineering and Manufacturing",
             "Ecosystem Partners",
+          ]}
+        />
+        <MenuColumn
+          /* intentionally no heading for the second capabilities column (matches ref) */
+          items={[
             "Emerging Technology",
             "Finance and Risk Management",
             "Infrastructure and Capital Projects",
             "Learning",
-          ]}
-        />
-        <MenuColumn
-          heading="More Capabilities"
-          items={[
             "Managed Services",
             "Marketing and Experience",
             "Metaverse",
@@ -270,6 +263,8 @@ function WhatWeDoSection() {
             "Technology Transformation",
           ]}
         />
+
+        {/* Industries (right 2 columns, split list) */}
         <MenuColumn
           heading="Industries"
           items={[
@@ -286,7 +281,7 @@ function WhatWeDoSection() {
           ]}
         />
         <MenuColumn
-          heading="More Industries"
+          /* second industries column (no repeated heading like the reference) */
           items={[
             "Industrial",
             "Insurance",
@@ -309,7 +304,7 @@ function WhatWeDoSection() {
 function WhoWeAreSection() {
   return (
     <SectionShell title="About Accenture">
-      <div className="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div className="mega-grid-3">
         <MenuColumn
           heading="Our organization"
           items={[
@@ -333,11 +328,10 @@ function WhoWeAreSection() {
     </SectionShell>
   );
 }
-
 function CareersSection() {
   return (
     <SectionShell title="Careers homepage">
-      <div className="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div className="mega-grid-3">
         <MenuColumn heading="Find a job" items={["Search for jobs", "Career areas"]} />
         <MenuColumn
           heading="Life at Accenture"
@@ -349,16 +343,14 @@ function CareersSection() {
   );
 }
 
-function MenuColumn({ heading, items }: { heading: string; items: string[] }) {
+function MenuColumn({ heading, items }: { heading?: string; items: string[] }) {
   return (
     <div>
-      <h4 className="mb-3 text-white/90 font-semibold">{heading}</h4>
-      <ul className="space-y-2">
+      {heading && <h4 className="mega-col-title">{heading}</h4>}
+      <ul className="mega-list">
         {items.map((t) => (
           <li key={t}>
-            <a href="#" className="text-white hover:text-white/90 transition-colors">
-              {t}
-            </a>
+            <a href="#" className="mega-link">{t}</a>
           </li>
         ))}
       </ul>
