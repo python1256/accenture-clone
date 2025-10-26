@@ -51,7 +51,7 @@ const slides: Slide[] = [
 export default function ShowcaseCarousel() {
   const N = slides.length;
   const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,7 @@ export default function ShowcaseCarousel() {
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+        //   onMouseLeave={() => setPaused(false)}
           role="region"
           aria-roledescription="carousel"
           aria-label="Stories"
