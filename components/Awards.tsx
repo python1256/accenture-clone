@@ -1,31 +1,175 @@
 "use client";
 
-const Awards = () => {
+import React, { useEffect, useRef } from "react";
+
+type Theme = "blue" | "red" | "purple";
+interface Card {
+  id: number;
+  theme: Theme;
+  title: string;        // title for both faces
+  teaser: string;       // short front line
+  description: string;  // detailed back text
+  link?: string;
+}
+
+const CARDS: Card[] = [
+  {
+    id: 1,
+    theme: "blue",
+    title: "A Leader in Reinvention",
+    teaser: "Recognition for leadership and impact.",
+    description:
+      "Our Chair and CEO, Julie Sweet, is No. 1 on Fortune’s 2023 Most Powerful People in Business; included in the TIME100 Most Influential People of 2024; and received the ADL Courage Against Hate Award.",
+    link: "#",
+  },
+  {
+    id: 2,
+    theme: "red",
+    title: "A Great Place to Work®",
+    teaser: "Celebrating our people and culture.",
+    description:
+      "Ranked No. 6 on the Great Place To Work® World’s Best Workplaces™ list—based on employee feedback about trust, pride and camaraderie.",
+    link: "#",
+  },
+  {
+    id: 3,
+    theme: "purple",
+    title: "A Top Consulting Firm",
+    teaser: "Trusted by clients worldwide.",
+    description:
+      "Forbes named Accenture among the World’s Best Management Consulting Firms, recommended by clients and consultants across industries.",
+    link: "#",
+  },
+];
+
+export default function GlobalRecognitionPinned() {
+  const stepsRef = useRef<HTMLDivElement | null>(null);
+
+  // reveal each card when its step enters the viewport
+  useEffect(() => {
+    const root = stepsRef.current;
+    if (!root) return;
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>(".grx-card"));
+    const io = new IntersectionObserver(
+      entries => {
+        for (const e of entries) {
+          if (e.isIntersecting) e.target.classList.add("is-visible");
+        }
+      },
+      { threshold: 0.35 }
+    );
+
+    cards.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <section className="px-6 py-24 bg-black text-white text-center">
-      <h2 className="text-4xl md:text-6xl font-extrabold mb-10 leading-[1.15]">
-        Global recognition and awards
-      </h2>
-
-      <div className="bg-red-600 text-left max-w-3xl mx-auto p-8 md:p-10 rounded-md">
-        <h3 className="font-semibold text-xl md:text-2xl mb-4 leading-snug">
-          Ranked No. 6 on the Great Place To Work® World’s Best Workplaces™ list.
-        </h3>
-
-        <p className="text-white/90 text-base md:text-lg leading-relaxed">
-          This recognition is based on feedback from our people — measuring
-          their level of trust, pride and camaraderie at work.
-        </p>
-
-        <button className="flex items-center gap-2 mt-8 font-semibold text-sm hover:text-black">
-          <span>See related awards</span>
-          <span className="bg-white text-black font-bold px-2 py-1 leading-none rounded-sm">
-            &gt;
-          </span>
-        </button>
+    <section className="grx-section">
+      {/* Pinned background headline — remains during all three steps */}
+      <div className="grx-sticky">
+        <h2 className="grx-title">Global recognition and awards</h2>
       </div>
+
+      {/* Three steps: Right → Left → Right */}
+      <div ref={stepsRef} className="grx-steps">
+        {/* Step 1 (RIGHT) */}
+        <div className="grx-step grx-step--right">
+          <div className="grx-inner">
+            <article
+              className={`grx-card ${CARDS[0].theme}`}
+              style={{ ["--tilt" as any]: "6deg" }}
+              tabIndex={0}
+              aria-label={CARDS[0].title}
+            >
+              <div className="grx-innerFaces">
+                <div className="grx-face grx-front">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[0].title}</h3>
+                    <p className="grx-teaser">{CARDS[0].teaser}</p>
+                  </div>
+                </div>
+                <div className="grx-face grx-back">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[0].title}</h3>
+                    <p className="grx-desc">{CARDS[0].description}</p>
+                    {CARDS[0].link && (
+                      <a className="grx-link" href={CARDS[0].link}>
+                        See related awards &gt;
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        {/* Step 2 (LEFT) */}
+        <div className="grx-step grx-step--left">
+          <div className="grx-inner">
+            <article
+              className={`grx-card ${CARDS[1].theme}`}
+              style={{ ["--tilt" as any]: "-6deg" }}
+              tabIndex={0}
+              aria-label={CARDS[1].title}
+            >
+              <div className="grx-innerFaces">
+                <div className="grx-face grx-front">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[1].title}</h3>
+                    <p className="grx-teaser">{CARDS[1].teaser}</p>
+                  </div>
+                </div>
+                <div className="grx-face grx-back">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[1].title}</h3>
+                    <p className="grx-desc">{CARDS[1].description}</p>
+                    {CARDS[1].link && (
+                      <a className="grx-link" href={CARDS[1].link}>
+                        See related awards &gt;
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        {/* Step 3 (RIGHT) */}
+        <div className="grx-step grx-step--right">
+          <div className="grx-inner">
+            <article
+              className={`grx-card ${CARDS[2].theme}`}
+              style={{ ["--tilt" as any ]: "6deg" }}
+              tabIndex={0}
+              aria-label={CARDS[2].title}
+            >
+              <div className="grx-innerFaces">
+                <div className="grx-face grx-front">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[2].title}</h3>
+                    <p className="grx-teaser">{CARDS[2].teaser}</p>
+                  </div>
+                </div>
+                <div className="grx-face grx-back">
+                  <div>
+                    <h3 className="grx-h3">{CARDS[2].title}</h3>
+                    <p className="grx-desc">{CARDS[2].description}</p>
+                    {CARDS[2].link && (
+                      <a className="grx-link" href={CARDS[2].link}>
+                        See related awards &gt;
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      {/* after step 3, sticky headline releases and next section appears */}
     </section>
   );
-};
-
-export default Awards;
+}

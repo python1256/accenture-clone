@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CHANGE – BAS Text (Debug)</title>
+  <style>
+    html,body{height:100%;margin:0;background:#000;overflow:hidden;}
+    #three-container{position:absolute;inset:0;}
+    #instructions{position:absolute;left:0;right:0;bottom:6px;color:#666;text-align:center;font:12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;pointer-events:none;}
+    #errors{position:absolute;left:8px;top:8px;max-width:50vw;background:rgba(255,0,0,.08);color:#ffbdbd;
+      font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      border:1px solid rgba(255,0,0,.25);padding:8px 10px;border-radius:8px;display:none;white-space:pre-wrap}
+  </style>
+
+  <!-- libs (UMD) -->
+  <script src="https://unpkg.com/three@0.110.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.110.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.110.0/examples/js/loaders/FontLoader.js"></script>
+  <script src="https://unpkg.com/three@0.110.0/examples/js/geometries/TextGeometry.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r110/examples/js/libs/pnltri.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
+  <script src="https://unpkg.com/three-bas@2.0.2/dist/three-bas.min.js"></script>
+</head>
+<body>
+  <div id="three-container"></div>
+  <div id="instructions">click and drag to control the animation</div>
+  <div id="errors"></div>
+
+  <script>
+    // PNLTRI override used by the pen
+    THREE.ShapeUtils.triangulateShape = (function () {
+      var pnlTriangulator = new PNLTRI.Triangulator();
+      return function triangulateShape(contour, holes) {
+        return pnlTriangulator.triangulate_polygon([contour].concat(holes));
+      };
+    })();
+
+    const $err = document.getElementById('errors');
+    function showErr(msg){ $err.style.display='block'; $err.textContent += msg + '\n'; console.error(msg); }
+
+    // ---- INIT ----
+    window.onload = function init() {
+      try {
+        if (!THREE || !THREE.BAS) {
+          showErr('Libraries missing. THREE or THREE.BAS not loaded.');
+          return;
+        }
+        console.log('THREE rev', THREE.REVISION, 'BAS', !!THREE.BAS);
+
+        var root = new THREERoot({ createCameraControls:false, antialias:(window.devicePixelRatio===1), fov:60 });
+        root.renderer.setClearColor(0x000000);
+        root.renderer.setPixelRatio(window.devicePixelRatio || 1);
+        root.camera.position.set(0, 0, 600);
+
+        var light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(0, 0, 1);
+        root.scene.add(light);
+
+        // Load local font to avoid CORS/XHR issues
+        var loader = new THREE.FontLoader();
+        loader.load('/fonts/helvetiker_bold.typeface.json', function(font){
+          try {
+            var geo = generateTextGeometry('CHANGE', {
+              size: 60, height: 12, font: font,
+              curveSegments: 24, bevelSize: 2, bevelThickness: 2, bevelEnabled: true,
+              anchor: { x: 0.5, y: 0.5, z: 0.0 }
+            });
+
+            THREE.BAS.Utils.tessellateRepeat(geo, 1.0, 2);
+            THREE.BAS.Utils.separateFaces(geo);
+
+            var textAnimation = new TextAnimation(geo);
+            root.scene.add(textAnimation);
+
+            var tl = new TimelineMax({ repeat:-1, repeatDelay:0.5, yoyo:true });
+            tl.fromTo(textAnimation, 4, { animationProgress: 0.0 }, { animationProgress: 0.6, ease: Power1.easeInOut }, 0);
+            tl.fromTo(textAnimation.rotation, 4, { y:0 }, { y:Math.PI*2, ease:Power1.easeInOut }, 0);
+
+            createTweenScrubber(tl);
+          } catch(e) {
+            showErr('Build text failed: ' + e.message);
+          }
+        }, undefined, function(err){
+          showErr('Font failed to load: /fonts/helvetiker_bold.typeface.json');
+        });
+
+      } catch(e) { showErr(e.message); }
+    };
+
+    function generateTextGeometry(text, params) {
+      var geometry = new THREE.TextGeometry(text, params);
+      geometry.computeBoundingBox();
+      var size = geometry.boundingBox.getSize(new THREE.Vector3());
+      var matrix = new THREE.Matrix4().makeTranslation(-size.x * params.anchor.x, -size.y * params.anchor.y, 0);
+      geometry.applyMatrix(matrix);
+      return geometry;
+    }
+
+    // ----- Class from pen (unchanged logic) -----
+    function TextAnimation(textGeometry) {
+      var bufferGeometry = new THREE.BAS.ModelBufferGeometry(textGeometry);
+      var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
+      var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
+      var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
+
+      var faceCount = bufferGeometry.faceCount;
+      var i, i2 = 0, i3 = 0, i4 = 0, v;
+
+      var maxDelay = 0.0, minDuration = 1.0, maxDuration = 1.0, stretch = 0.05, lengthFactor = 0.001;
+      var maxLength = textGeometry.boundingBox.max.length();
+
+      this.animationDuration = maxDuration + maxDelay + stretch + lengthFactor * maxLength;
+      this._animationProgress = 0;
+
+      var axis = new THREE.Vector3(), angle;
+
+      for (i = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
+        var face = textGeometry.faces[i];
+        var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
+        var centroidN = new THREE.Vector3().copy(centroid).normalize();
+
+        var delay = (maxLength - centroid.length()) * lengthFactor;
+        var duration = THREE.Math.randFloat(minDuration, maxDuration);
+        for (v = 0; v < 6; v += 2) { aAnimation.array[i2+v] = delay + stretch*Math.random(); aAnimation.array[i2+v+1] = duration; }
+
+        var p = fibSpherePoint(i, faceCount, 200);
+        for (v = 0; v < 9; v += 3) { aEndPosition.array[i3+v] = p.x; aEndPosition.array[i3+v+1] = p.y; aEndPosition.array[i3+v+2] = p.z; }
+
+        axis.copy(centroidN); axis.y = -axis.y; axis.z = -axis.z; axis.normalize();
+        angle = Math.PI * THREE.Math.randFloat(0.5, 2.0);
+        for (v = 0; v < 12; v += 4) {
+          aAxisAngle.array[i4+v] = axis.x;
+          aAxisAngle.array[i4+v+1] = axis.y;
+          aAxisAngle.array[i4+v+2] = axis.z;
+          aAxisAngle.array[i4+v+3] = angle;
+        }
+      }
+
+      var material = new THREE.BAS.PhongAnimationMaterial(
+        {
+          shading: THREE.FlatShading,
+          side: THREE.DoubleSide,
+          transparent: true,
+          uniforms: { uTime: { type: 'f', value: 0 } },
+          shaderFunctions: [
+            THREE.BAS.ShaderChunk['cubic_bezier'],
+            THREE.BAS.ShaderChunk['ease_out_cubic'],
+            THREE.BAS.ShaderChunk['quaternion_rotation']
+          ],
+          shaderParameters: [
+            'uniform float uTime;',
+            'attribute vec2 aAnimation;',
+            'attribute vec3 aEndPosition;',
+            'attribute vec4 aAxisAngle;'
+          ],
+          shaderVertexInit: [
+            'float tDelay = aAnimation.x;',
+            'float tDuration = aAnimation.y;',
+            'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+            'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
+          ],
+          shaderTransformPosition: [
+            'transformed = mix(transformed, aEndPosition, tProgress);',
+            'float angle = aAxisAngle.w * tProgress;',
+            'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+            'transformed = rotateVector(tQuat, transformed);'
+          ]
+        },
+        { diffuse: 0xffffff, specular: 0xcccccc, shininess: 6 }
+      );
+
+      THREE.Mesh.call(this, bufferGeometry, material);
+      this.frustumCulled = false;
+    }
+    TextAnimation.prototype = Object.create(THREE.Mesh.prototype);
+    TextAnimation.prototype.constructor = TextAnimation;
+    Object.defineProperty(TextAnimation.prototype, 'animationProgress', {
+      get: function(){ return this._animationProgress; },
+      set: function(v){ this._animationProgress = v; this.material.uniforms['uTime'].value = this.animationDuration * v; }
+    });
+
+    function THREERoot(params) {
+      params = Object.assign({ fov:60, zNear:10, zFar:100000, createCameraControls:false, antialias:true }, params || {});
+      this.renderer = new THREE.WebGLRenderer({ antialias: params.antialias, alpha: false });
+      this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      document.getElementById('three-container').appendChild(this.renderer.domElement);
+
+      this.camera = new THREE.PerspectiveCamera(params.fov, 1, params.zNear, params.zFar);
+      this.scene = new THREE.Scene();
+      if (params.createCameraControls) this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+      this.resize = this.resize.bind(this);
+      this.tick = this.tick.bind(this);
+      this.resize(); this.tick();
+      window.addEventListener('resize', this.resize, false);
+    }
+    THREERoot.prototype = {
+      tick: function(){ this.update(); this.render(); requestAnimationFrame(this.tick); },
+      update: function(){ this.controls && this.controls.update(); },
+      render: function(){ this.renderer.render(this.scene, this.camera); },
+      resize: function(){
+        var w = window.innerWidth, h = window.innerHeight;
+        this.camera.aspect = w/h; this.camera.updateProjectionMatrix();
+        this.renderer.setSize(w, h, false);
+      }
+    };
+
+    function fibSpherePoint(i,n,radius){
+      var G=Math.PI*(3-Math.sqrt(5)), step=2.0/n, r,phi, v={x:0,y:0,z:0};
+      v.y=i*step-1+(step*0.5); r=Math.sqrt(1-v.y*v.y); phi=i*G;
+      v.x=Math.cos(phi)*r; v.z=Math.sin(phi)*r;
+      v.x*=radius; v.y*=radius; v.z*=radius; return v;
+    }
+
+    function createTweenScrubber(tween,seekSpeed){
+      seekSpeed = seekSpeed || 0.001;
+      function stop(){ TweenMax.to(tween, 1, {timeScale:0}); }
+      function resume(){ TweenMax.to(tween, 1, {timeScale:1}); }
+      function seek(dx){ var p=tween.progress(); tween.progress(Math.max(0,Math.min(1,p+(dx*seekSpeed)))); }
+      var md=false,cx=0;
+      document.addEventListener('mousedown', e=>{md=true;cx=e.clientX;stop();document.body.style.cursor='ew-resize';});
+      document.addEventListener('mouseup',   ()=>{md=false;resume();document.body.style.cursor='auto';});
+      document.addEventListener('mousemove', e=>{if(!md)return;var dx=e.clientX-cx;cx=e.clientX;seek(dx);});
+      document.addEventListener('touchstart', e=>{cx=e.touches[0].clientX;stop();},{passive:false});
+      document.addEventListener('touchend',   ()=>{resume();},{passive:false});
+      document.addEventListener('touchmove',  e=>{var dx=e.touches[0].clientX-cx;cx=e.touches[0].clientX;seek(dx);e.preventDefault();},{passive:false});
+    }
+  </script>
+</body>
+</html>
