@@ -1,0 +1,39 @@
+/* app/logo.css  (imported by Logo.tsx) */
+.acc-logo {
+    display: inline-block;
+    font-weight: 800;
+    font-size: 38px;
+    line-height: 1;
+    color: #a100ff;
+    text-shadow:
+      0 0 2px rgba(161, 0, 255, 0.8),
+      0 0 8px rgba(161, 0, 255, 0.7),
+      0 0 16px rgba(161, 0, 255, 0.5);
+    transform-origin: center;
+    animation: accPulse 2.2s ease-in-out infinite;
+  }
+  
+  @keyframes accPulse {
+    0% {
+      transform: translateY(0) scale(1);
+      text-shadow:
+        0 0 2px rgba(161, 0, 255, 0.9),
+        0 0 8px rgba(161, 0, 255, 0.8),
+        0 0 16px rgba(161, 0, 255, 0.6);
+    }
+    50% {
+      transform: translateY(-1px) scale(1.04);
+      text-shadow:
+        0 0 3px rgba(161, 0, 255, 1),
+        0 0 14px rgba(161, 0, 255, 0.9),
+        0 0 26px rgba(161, 0, 255, 0.8);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      text-shadow:
+        0 0 2px rgba(161, 0, 255, 0.9),
+        0 0 8px rgba(161, 0, 255, 0.8),
+        0 0 16px rgba(161, 0, 255, 0.6);
+    }
+  }
+  

@@ -1,0 +1,164 @@
+/* ─────────────────────────────
+   Fonts
+   ───────────────────────────── */
+   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+   
+   /* Tailwind layers (keep these in the file) */
+   @tailwind base;
+   @tailwind components;
+   @tailwind utilities;
+   
+   /* ─────────────────────────────
+      Brand tokens / utilities
+      ───────────────────────────── */
+   :root {
+     /* Accenture-ish purple */
+     --accent-purple: #6C1DCB;
+   }
+   
+   @layer utilities {
+     .text-accent-purple { color: var(--accent-purple); }
+     .bg-accent-purple   { background-color: var(--accent-purple); }
+   }
+   
+   /* ─────────────────────────────
+      Base
+      ───────────────────────────── */
+   html, body {
+     background-color: #000;
+     color: #fff;
+     margin: 0;
+     padding: 0;
+     min-height: 100vh;
+     min-width: 100vw;
+     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Noto Sans', sans-serif;
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
+     overflow-x: hidden; /* no horizontal scrolling */
+   }
+   
+   /* (Tailwind preflight already sets border-box, but keeping here is harmless) */
+   *, *::before, *::after { box-sizing: border-box; }
+   
+   /* ─────────────────────────────
+      HERO: container + row + cells
+      (used by your Hero.tsx)
+      ───────────────────────────── */
+   
+   /* outer shell (keeps background layering simple) */
+   .hero-shell { position: relative; isolation: isolate; background:#000; color:#fff; }
+   .hero-vanta { position: absolute; inset: 0; z-index: -1; }
+   
+   /* ↓↓↓ hero height ~50% of previous ↓↓↓ */
+   .hero-container{
+     width:100%;
+     max-width:1300px;
+     margin-inline:auto;
+     padding-inline:1.5rem;          /* ~px-6 */
+     /* was: clamp(560px, calc(100svh - 80px), 820px) */
+     height: clamp(280px, calc(50svh - 40px), 410px);
+     display:flex;
+     align-items:center;
+   }
+   
+   .hero-row{ width:100%; text-align:center; font-size:0; } /* kill inline-block gaps */
+   .hero-left,.hero-right{ display:inline-block; vertical-align:middle; font-size:initial; box-sizing:border-box; }
+   .hero-left{ width:62%; padding-right:2rem; }
+   .hero-right{ width:38%; padding-left:2rem; }
+   
+   /* purple rule – halved */
+   .hero-rule{
+     width:32px;              /* was 64px */
+     height:3px;              /* was 6px  */
+     background:var(--accent-purple);
+     margin:.5rem 0 .75rem 0; /* was 1rem 0 1.5rem 0 */
+     border-radius:2px;
+   }
+   
+   /* ─────────────────────────────
+      Headline scale – halved (with tighter tracking & line-height)
+      ───────────────────────────── */
+   .hero-h1,.hero-h2{
+     font-family:'Montserrat',sans-serif;
+     font-weight:900;
+     text-transform:uppercase;
+     letter-spacing:-.015em;            /* slightly relaxed vs -.02 for readability */
+     line-height:.92;                   /* tighter like the reference */
+     /* was: clamp(2.4rem, 6.8vw, 7.4rem)  → half scale */
+     font-size: clamp(1.2rem, 3.4vw, 3.7rem);
+     margin:0;
+   }
+   .hero-h1{ margin-bottom:0.08em; }
+   .hero-h2{ letter-spacing:-.012em; }
+   
+   /* Quote – halved */
+   .hero-quote{
+     margin-top:.625rem;                 /* was 1.25rem */
+     font-weight:900;
+     color:rgba(255,255,255,.8);
+     /* was: clamp(1.5rem, 2.8vw, 2.75rem) */
+     font-size: clamp(.75rem, 1.4vw, 1.375rem);
+     user-select:none;
+   }
+   
+   /* optional top fade (unchanged) */
+   .hero-fade{
+     position:absolute; inset-inline:0; top:0; height:6rem;
+     pointer-events:none;
+     background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);
+   }
+   
+   /* ─────────────────────────────
+      Entrances (counter-slide)
+      ───────────────────────────── */
+   @keyframes heroSlideInLeftHalf {
+     from { transform: translateX(-0.5rem); opacity: 0; }
+     to   { transform: translateX(0);        opacity: 1; }
+   }
+   @keyframes heroSlideInRightHalf {
+     from { transform: translateX(0.5rem); opacity: 0; }
+     to   { transform: translateX(0);       opacity: 1; }
+   }
+   
+   .hero-enter-left{
+     will-change: transform, opacity;
+     animation: heroSlideInLeftHalf .6s cubic-bezier(.22,1,.36,1) .05s both;
+   }
+   .hero-enter-right{
+     will-change: transform, opacity;
+     animation: heroSlideInRightHalf .6s cubic-bezier(.22,1,.36,1) .12s both;
+   }
+   
+   /* Respect reduced-motion */
+   @media (prefers-reduced-motion: reduce) {
+     .hero-enter-left,
+     .hero-enter-right {
+       animation: none;
+       transform: none;
+       opacity: 1;
+     }
+   }
+   
+   /* stack at ≤1024px (unchanged) */
+   @media (max-width:1024px){
+     .hero-left,.hero-right{ width:100%; padding:0; display:block; }
+     .hero-container{ padding-top:2rem; padding-bottom:1rem; height:auto; }
+   }
+   /* ───────── NAV styles ───────── */
+.nav-item{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    font-weight:600;
+    font-size:0.95rem;       /* crisp, like the reference */
+    color:rgba(255,255,255,.9);
+    transition:color .15s ease;
+  }
+  .nav-item:hover{ color:#fff; }
+  
+  /* Remove any accidental borders/lines some resets add */
+  header > div { border: 0; }
+
+  
